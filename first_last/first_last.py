@@ -14,11 +14,11 @@
 
 from moonshot import Moonshot
 from moonshot.commission import PerShareCommission
-from quantrocket.history import get_historical_prices
+from quantrocket import get_prices
 
 class USStockCommission(PerShareCommission):
     IB_COMMISSION_PER_SHARE = 0.005
-    
+
 class FirstHalfHourPredictsLastHalfHour(Moonshot):
     """
     Intraday strategy that buys (sells) if the market is up (down) during the first
@@ -29,7 +29,7 @@ class FirstHalfHourPredictsLastHalfHour(Moonshot):
     DB = 'spy-30min'
     DB_TIMES = ['10:00:00', '15:00:00', '15:30:00']
     DB_FIELDS = ['Open','Close']
-    COMMISSION_CLASS = USStockCommission   
+    COMMISSION_CLASS = USStockCommission
     SLIPPAGE_BPS = 0.5
     MIN_VIX = None
     BENCHMARK = 756733
@@ -39,12 +39,12 @@ class FirstHalfHourPredictsLastHalfHour(Moonshot):
 
         closes = prices.loc["Close"]
         opens = prices.loc["Open"]
-        
+
         # Calculate first half-hour returns (including overnight return)
         prior_closes = closes.xs('15:30:00', level="Time").shift()
         ten_oclock_prices = opens.xs('10:00:00', level="Time")
         first_half_hour_returns = (ten_oclock_prices - prior_closes) / prior_closes
-        
+
         # Calculate penultimate half-hour returns
         fifteen_oclock_prices = opens.xs('15:00:00', level="Time")
         fifteen_thirty_prices = closes.xs('15:00:00', level="Time")
@@ -53,18 +53,18 @@ class FirstHalfHourPredictsLastHalfHour(Moonshot):
         # long when both are positive, short when both are negative
         long_signals = (first_half_hour_returns > 0) & (penultimate_half_hour_returns > 0)
         short_signals = (first_half_hour_returns < 0) & (penultimate_half_hour_returns < 0)
-        
+
         # Combine long and short signals
         signals = long_signals.astype(int).where(long_signals, -short_signals.astype(int))
-           
+
         # filter by VIX
         if self.MIN_VIX:
             # Query VIX at 15:30 NY time (= close of 14:00:00 bar because VIX is Chicago time)
-            vix = get_historical_prices("vix-30min", 
-                                        fields="Close", 
-                                        start_date=signals.index.min(), 
-                                        end_date=signals.index.max(), 
-                                        times="14:00:00")
+            vix = get_prices("vix-30min",
+                             fields="Close",
+                             start_date=signals.index.min(),
+                             end_date=signals.index.max(),
+                             times="14:00:00")
             # extract VIX and squeeze single-column DataFrame to Series
             vix = vix.loc["Close"].xs("14:00:00", level="Time").squeeze()
             # reshape VIX like signals
