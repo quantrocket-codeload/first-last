@@ -32,7 +32,7 @@ class FirstHalfHourPredictsLastHalfHour(Moonshot):
     COMMISSION_CLASS = USStockCommission
     SLIPPAGE_BPS = 0.5
     MIN_VIX = None
-    BENCHMARK = 756733
+    BENCHMARK = "FIBBG000BDTBL9"
     BENCHMARK_TIME = "15:30:00"
 
     def prices_to_signals(self, prices):
