@@ -1,4 +1,4 @@
-# Copyright 2019 QuantRocket LLC - All Rights Reserved
+# Copyright 2020 QuantRocket LLC - All Rights Reserved
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -17,7 +17,7 @@ from moonshot.commission import PerShareCommission
 from quantrocket import get_prices
 
 class USStockCommission(PerShareCommission):
-    IB_COMMISSION_PER_SHARE = 0.005
+    BROKER_COMMISSION_PER_SHARE = 0.005
 
 class FirstHalfHourPredictsLastHalfHour(Moonshot):
     """
@@ -26,14 +26,15 @@ class FirstHalfHourPredictsLastHalfHour(Moonshot):
     """
 
     CODE = 'first-last'
-    DB = 'spy-30min'
-    DB_TIMES = ['10:00:00', '15:00:00', '15:30:00']
+    DB = 'usstock-1min'
+    DB_TIMES = ['10:00:00', '15:00:00', '15:30:00', '15:59:00']
     DB_FIELDS = ['Open','Close']
+    SIDS = ["FIBBG000BDTBL9"]
     COMMISSION_CLASS = USStockCommission
     SLIPPAGE_BPS = 0.5
     MIN_VIX = None
     BENCHMARK = "FIBBG000BDTBL9"
-    BENCHMARK_TIME = "15:30:00"
+    BENCHMARK_TIME = "15:59:00"
 
     def prices_to_signals(self, prices):
 
@@ -41,13 +42,13 @@ class FirstHalfHourPredictsLastHalfHour(Moonshot):
         opens = prices.loc["Open"]
 
         # Calculate first half-hour returns (including overnight return)
-        prior_closes = closes.xs('15:30:00', level="Time").shift()
+        prior_closes = closes.xs('15:59:00', level="Time").shift()
         ten_oclock_prices = opens.xs('10:00:00', level="Time")
         first_half_hour_returns = (ten_oclock_prices - prior_closes) / prior_closes
 
         # Calculate penultimate half-hour returns
         fifteen_oclock_prices = opens.xs('15:00:00', level="Time")
-        fifteen_thirty_prices = closes.xs('15:00:00', level="Time")
+        fifteen_thirty_prices = opens.xs('15:30:00', level="Time")
         penultimate_half_hour_returns = (fifteen_thirty_prices - fifteen_oclock_prices) / fifteen_oclock_prices
 
         # long when both are positive, short when both are negative
@@ -92,7 +93,7 @@ class FirstHalfHourPredictsLastHalfHour(Moonshot):
 
         # Our signal came at 15:30 and we enter at 15:30
         entry_prices = opens.xs("15:30:00", level="Time")
-        session_closes = closes.xs("15:30:00", level="Time")
+        session_closes = closes.xs("15:59:00", level="Time")
 
         pct_changes = (session_closes - entry_prices) / entry_prices
         gross_returns = pct_changes * positions
