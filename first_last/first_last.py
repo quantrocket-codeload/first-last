@@ -12,6 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import pandas as pd
 from moonshot import Moonshot
 from moonshot.commission import PerShareCommission
 from quantrocket import get_prices
@@ -36,7 +37,7 @@ class FirstHalfHourPredictsLastHalfHour(Moonshot):
     BENCHMARK = "FIBBG000BDTBL9"
     BENCHMARK_TIME = "15:59:00"
 
-    def prices_to_signals(self, prices):
+    def prices_to_signals(self, prices: pd.DataFrame):
 
         closes = prices.loc["Close"]
         opens = prices.loc["Open"]
@@ -74,19 +75,19 @@ class FirstHalfHourPredictsLastHalfHour(Moonshot):
 
         return signals
 
-    def signals_to_target_weights(self, signals, prices):
+    def signals_to_target_weights(self, signals: pd.DataFrame, prices: pd.DataFrame):
 
         # only one instrument, so allocate all capital
         target_weights = signals.copy()
         return target_weights
 
-    def target_weights_to_positions(self, target_weights, prices):
+    def target_weights_to_positions(self, target_weights: pd.DataFrame, prices: pd.DataFrame):
 
         # We enter on the same day as the signals/target_weights
         positions = target_weights.copy()
         return positions
 
-    def positions_to_gross_returns(self, positions, prices):
+    def positions_to_gross_returns(self, positions: pd.DataFrame, prices: pd.DataFrame):
 
         opens = prices.loc["Open"]
         closes = prices.loc["Close"]
